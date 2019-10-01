@@ -62,7 +62,7 @@ int main( int argc, char **argv)
 	}
 
 	point p[n];
-	line_segment l[n];
+	line_segment l[2 * n];
 
 	fprintf( stderr, "Create %d points\n", n);
 
@@ -92,7 +92,7 @@ int main( int argc, char **argv)
 
 void print_points( point *p, int n)
 {
-	printf("\n#points\n");
+	printf("\n# %d points\n", n);
 	for (int i = 0; i < n; i++)
 	{
 		printf("points(%d, %d)\n", p[i].x, p[i].y); 
@@ -105,50 +105,67 @@ void print_points( point *p, int n)
 // return value : number of line segments
 int convex_hull( point *p, int n, line_segment *l)
 {
-	int lineCount = 0;
-	for (int i = 0; i < n; i++) // first point
+	// remove duplicated point
+	int newCount = 0;
+	point* newP = (point*) malloc (sizeof (point) * n);
+	for (int i = 0; i < n; i++)
 	{
-		for (int j = i + 1; j < n; j++) // second point
+		int isDuplicated = 0;
+		for (int j = 0; j < newCount; j++)
+		{
+			if (newP[j].x == p[i].x && newP[j].y == p[i].y) isDuplicated = 1;
+		}
+		if (!isDuplicated) newP[newCount++] = p[i];
+	}
+
+	// convex hull main algorithm
+	int lineCount = 0;
+	for (int i = 0; i < newCount; i++) // first point
+	{
+		for (int j = i + 1; j < newCount; j++) // second point
 		{
 			// ax + by = c
-			float a = p[j].y - p[i].y;
-			float b = p[i].x - p[j].x;
-			float c = p[i].x * p[j].y - p[i].y * p[j].x;
+			int a = newP[j].y - newP[i].y;
+			int b = newP[i].x - newP[j].x;
+			int c = newP[i].x * newP[j].y - newP[i].y * newP[j].x;
 
 			int checker = 0;
 			int isLine = 1;
 
-			for (int idx = 0; idx < n; idx++) // check for every point
+			for (int k = 0; k < newCount; k++) // check for every point
 			{
-				float where = a * p[idx].x + b * p[idx].y - c;
+				if (k == i || k == j) continue;
+				int where = a * newP[k].x + b * newP[k].y - c;
 				if (checker == 0)
 				{
 					checker = where;
 				}
-				else 
+				else if (checker * where < 0)
 				{
-					if (checker * where < 0)
-					{
-						isLine = 0;
-						break;
-					}
+					isLine = 0;
+					break;
+				}
+				if (where == 0 && ((newP[i].x - newP[k].x) * (newP[j].x - newP[k].x) < 0 || (newP[i].y - newP[k].y) * (newP[j].y - newP[k].y) < 0))
+				{ // remove overlaped line
+					isLine = 0;
+					break;
 				}
 			}
 
 			if (isLine)
 			{
-				l[lineCount].from = p[i];
-				l[lineCount++].to = p[j];
+				l[lineCount].from = newP[i];
+				l[lineCount++].to = newP[j];
 			}
 		}
 	}
 
-	return lineCount + 1;
+	return lineCount;
 }
 
 void print_line_segments( line_segment *l, int num_line)
 {
-	printf("\n#line segments\n");
+	printf("\n# %d line segments\n", num_line);
 	for (int i = 0; i < num_line; i++)
 	{
 		printf("segments(%d, %d, %d, %d)\n", l[i].from.x, l[i].from.y, l[i].to.x, l[i].to.y); 
