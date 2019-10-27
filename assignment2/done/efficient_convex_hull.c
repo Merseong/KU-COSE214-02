@@ -136,11 +136,11 @@ int main( int argc, char **argv)
 	}
 
 	point *p;
-	p = (point *)malloc(sizeof (point *) * n);
+	p = (point *)malloc(sizeof (point) * n);
 	assert( p != NULL);
 	
 	line_segment *l;
-	l = (line_segment *)malloc(sizeof (line_segment *) * n);
+	l = (line_segment *)malloc(sizeof (line_segment) * n);
 	assert( l != NULL);
 
 	fprintf( stderr, "Create %d points\n", n);
@@ -209,8 +209,8 @@ int convex_hull_main( point *p, int n, point p1, point pn, line_segment *l, int 
 	}
 
 	// p1과 pm, pm과 pn에 대해 점을 나누고(왼쪽만 고름) convex_hull_main을 다시 호출
-	point* lp = (point*)malloc(sizeof(point*) * n);
-	point* rp = (point*)malloc(sizeof(point*) * n);
+	point* lp = (point*)malloc(sizeof(point) * n);
+	point* rp = (point*)malloc(sizeof(point) * n);
 
 	// p1 -> pm
 	int lp_count = 0;
