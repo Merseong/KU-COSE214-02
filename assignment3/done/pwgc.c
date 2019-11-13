@@ -76,13 +76,13 @@ int main(int argc, char **argv)
 	make_adjacency_matrix(graph);
 
 	// 인접 행렬 출력
-	print_graph(graph, 16);
+	//print_graph(graph, 16);
 
 	// .net 파일 만들기 pajek
 	save_graph("pwgc.net", graph, 16);
 
 	//////////////////////////////////////////
-	//depth_first_search( 0, 15); // initial state, goal state
+	depth_first_search(0, 15); // initial state, goal state
 
 	return 0;
 }
@@ -242,13 +242,73 @@ int changePC(int state)
 
 // 방문한 상태인지 검사
 // return value : 1 visited, 0 not visited
-int is_visited(int *visited, int level, int state);
+int is_visited(int *visited, int level, int state)
+{
+	for (int i = 0; i <= level; ++i)
+	{
+		if (visited[i] == state)
+			return 1;
+	}
+	return 0;
+}
 
 // 방문한 상태들을 차례로 화면에 출력
-void print_states(int *visited, int count);
+void print_states(int *visited, int count)
+{
+	printf("\nroute found!: \n");
+	for (int i = 0; i < count; ++i)
+	{
+		//bit_print(stdout, visited[i]);
+		int state = visited[i];
+		for (int i = 8; i > 0; i /= 2)
+		{
+			printf("%d", (state & i) == i);
+		}
+		printf("\n");
+	}
+}
 
 // recursive function
-void dfs_main(int state, int goal_state, int level, int *visited);
+void dfs_main(int state, int goal_state, int level, int *visited)
+{
+	//printf("state: %d, level: %d\n", state, level);
+	if (is_visited(visited, level, state))
+	{
+		return;
+	}
+	else
+	{
+		visited[level] = state;
+	}
+
+	if (is_dead_end(state))
+	{
+		return;
+	}
+	if (state == goal_state)
+	{
+		print_states(visited, level + 1);
+		return;
+	}
+
+	int p, w, g, c;
+	get_pwgc(state, &p, &w, &g, &c);
+
+	dfs_main(changeP(state), goal_state, level + 1, visited);
+	if (p == w)
+		dfs_main(changePW(state), goal_state, level + 1, visited);
+	if (p == g)
+		dfs_main(changePG(state), goal_state, level + 1, visited);
+	if (p == c)
+		dfs_main(changePC(state), goal_state, level + 1, visited);
+}
 
 // 깊이 우선 탐색 (초기 상태 -> 목적 상태)
-void depth_first_search(int init_state, int goal_state);
+void depth_first_search(int init_state, int goal_state)
+{
+	int visited[16] = {
+		-1,
+	};
+
+	dfs_main(init_state, goal_state, 0, visited);
+}
