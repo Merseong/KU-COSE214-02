@@ -13,13 +13,13 @@
 #define SUBSTITUTE_COST 1
 #define TRANSPOSE_COST 1
 
-void backtrace_main(int *op_matrix, int col_size, char *str1, char *str2, int n, int m, int level, char align_str[][8]);
+void backtrace_main(int **bt, int *op_matrix, int col_size, char *str1, char *str2, int n, int m, int level, char **align_str, int *align_case);
 void print_matrix(int **op_matrix, int n, int m);
 int min_editdistance(char *str1, char *str2);
 int __GetMin3(int a, int b, int c);
 int __GetMin4(int a, int b, int c, int d);
-void print_alignment(char align_str[][8], int level);
-void backtrace(int *op_matrix, int col_size, char *str1, char *str2, int n, int m);
+void print_alignment(char **align_str, int level);
+void backtrace(int **bt, int *op_matrix, int col_size, char *str1, char *str2, int n, int m);
 
 // 재귀적으로 연산자 행렬을 순회하며, 두 문자열이 최소편집거리를 갖는 모든 가능한 정렬(alignment) 결과를 출력한다.
 // op_matrix : 이전 상태에 대한 연산자 정보(backtrace)가 저장된 행렬 (1차원 배열임에 주의!)
@@ -30,8 +30,62 @@ void backtrace(int *op_matrix, int col_size, char *str1, char *str2, int n, int 
 // m : 문자열 2의 길이
 // level : 재귀호출의 레벨 (0, 1, 2, ...)
 // align_str : 정렬된 문자쌍들의 정보가 저장된 문자열 배열 예) "a - a", "a - b", "* - b", "ab - ba"
-void backtrace_main(int *op_matrix, int col_size, char *str1, char *str2, int n, int m, int level, char align_str[][8])
+void backtrace_main(int **bt, int *op_matrix, int col_size, char *str1, char *str2, int n, int m, int level, char **align_str, int *align_case)
 {
+	//printf("%d, %d start, op_matrix[col_size - 1] = %d\n", n, m, op_matrix[col_size - 1]);
+	if (n < 1 && m < 1)
+	{
+		printf("\n[%d] ==============================\n", *align_case);
+		print_alignment(align_str, level - 1);
+		(*align_case)++;
+		return;
+	}
+
+	if (op_matrix[col_size - 1] & INSERT_OP)
+	{
+		op_matrix[col_size] = bt[n][m - 1];
+		char strl[8] = "* - ";
+		strncat(strl, str2 + m - 1, 1);
+		strcpy(align_str[level], strl);
+		//printf("I: %s", align_str[level]);
+		backtrace_main(bt, op_matrix, col_size + 1, str1, str2, n, m - 1, level + 1, align_str, align_case);
+	}
+	if (op_matrix[col_size - 1] & DELETE_OP)
+	{
+		op_matrix[col_size] = bt[n - 1][m];
+		char strl[8] = "";
+		strncat(strl, str1 + n - 1, 1);
+		strcat(strl, " - *");
+		strcpy(align_str[level], strl);
+		//printf("D: %s", align_str[level]);
+		backtrace_main(bt, op_matrix, col_size + 1, str1, str2, n - 1, m, level + 1, align_str, align_case);
+	}
+	if (op_matrix[col_size - 1] & TRANSPOSE_OP)
+	{
+		op_matrix[col_size] = bt[n - 2][m - 2];
+		char strl[8] = "";
+		strncat(strl, str1 + n - 2, 1);
+		strncat(strl, str1 + n - 1, 1);
+		strcat(strl, " - ");
+		strncat(strl, str2 + m - 2, 1);
+		strncat(strl, str2 + m - 1, 1);
+		strcpy(align_str[level], strl);
+		//printf("T: %s", align_str[level]);
+		backtrace_main(bt, op_matrix, col_size + 1, str1, str2, n - 2, m - 2, level + 1, align_str, align_case);
+	}
+	if (op_matrix[col_size - 1] & SUBSTITUTE_OP || op_matrix[col_size - 1] & MATCH_OP)
+	{
+		op_matrix[col_size] = bt[n - 1][m - 1];
+		char strl[8] = "";
+		strncat(strl, str1 + n - 1, 1);
+		strcat(strl, " - ");
+		strncat(strl, str2 + m - 1, 1);
+		strcpy(align_str[level], strl);
+		//printf("S|M: %s", align_str[level]);
+		backtrace_main(bt, op_matrix, col_size + 1, str1, str2, n - 1, m - 1, level + 1, align_str, align_case);
+	}
+	//printf("%d, %d end\n", n, m);
+	return;
 }
 
 // 강의 자료의 형식대로 op_matrix를 출력 (좌하단(1,1) -> 우상단(n, m))
@@ -89,7 +143,8 @@ int min_editdistance(char *str1, char *str2)
 		bt[i][0] = DELETE_OP;
 		if (i == 0)
 		{
-			for (int j = 0; j <= str2_len; ++j)
+			bt[0][0] = 0;
+			for (int j = 1; j <= str2_len; ++j)
 			{
 				ed[0][j] = j * INSERT_COST;
 				bt[0][j] = INSERT_OP;
@@ -147,10 +202,14 @@ int min_editdistance(char *str1, char *str2)
 
 	print_matrix(bt, str1_len, str2_len);
 
-	//backtrace()
+	// find backtrace routes
+	int *op_matrix = (int *)malloc(sizeof(int) * (str1_len + str2_len + 2));
+	op_matrix[0] = bt[str1_len][str2_len];
+	backtrace(bt, op_matrix, 1, str1, str2, str1_len, str2_len);
 
 	int output = ed[str1_len][str2_len];
 	// free dp array
+	free(op_matrix);
 	for (int i = 0; i <= str1_len; ++i)
 	{
 		free(ed[i]);
@@ -184,7 +243,7 @@ int __GetMin4(int a, int b, int c, int d)
 
 ////////////////////////////////////////////////////////////////////////////////
 // 정렬된 문자쌍들을 출력
-void print_alignment(char align_str[][8], int level)
+void print_alignment(char **align_str, int level)
 {
 	int i;
 
@@ -196,11 +255,24 @@ void print_alignment(char align_str[][8], int level)
 
 ////////////////////////////////////////////////////////////////////////////////
 // backtrace_main을 호출하는 wrapper 함수
-void backtrace(int *op_matrix, int col_size, char *str1, char *str2, int n, int m)
+void backtrace(int **bt, int *op_matrix, int col_size, char *str1, char *str2, int n, int m)
 {
-	char align_str[n + m][8]; // n+m strings
+	char **align_str = (char **)malloc(sizeof(char *) * (n + m)); // n+m strings
+	for (int i = 0; i < n + m; ++i)
+	{
+		align_str[i] = (char *)malloc(sizeof(char) * 8);
+	}
+	int *align_case = (int *)malloc(sizeof(int));
+	*align_case = 1;
 
-	//backtrace_main( op_matrix, col_size, str1, str2, n, m, 0, align_str);
+	backtrace_main(bt, op_matrix, col_size, str1, str2, n, m, 0, align_str, align_case);
+
+	for (int i = 0; i < n + m; ++i)
+	{
+		free(align_str[i]);
+	}
+	free(align_str);
+	free(align_case);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
