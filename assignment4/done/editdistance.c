@@ -173,29 +173,26 @@ int min_editdistance(char *str1, char *str2)
 				ed[i][j] = transpose < ed[i][j] ? transpose : ed[i][j];
 			}
 
+			bt[i][j] = 0;
+			if (ed[i][j] == delete)
+			{
+				bt[i][j] += DELETE_OP;
+			}
+			if (ed[i][j] == insert)
+			{
+				bt[i][j] += INSERT_OP;
+			}
 			if (match)
 			{
-				bt[i][j] = MATCH_OP;
+				bt[i][j] += MATCH_OP;
 			}
-			else
+			else if (ed[i][j] == transpose)
 			{
-				bt[i][j] = 0;
-				if (ed[i][j] == delete)
-				{
-					bt[i][j] += DELETE_OP;
-				}
-				if (ed[i][j] == insert)
-				{
-					bt[i][j] += INSERT_OP;
-				}
-				if (ed[i][j] == transpose)
-				{
-					bt[i][j] += TRANSPOSE_OP;
-				}
-				else if (ed[i][j] == substitute)
-				{
-					bt[i][j] += SUBSTITUTE_OP;
-				}
+				bt[i][j] += TRANSPOSE_OP;
+			}
+			else if (ed[i][j] == substitute)
+			{
+				bt[i][j] += SUBSTITUTE_OP;
 			}
 		}
 	}
