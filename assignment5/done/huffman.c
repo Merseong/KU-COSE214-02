@@ -177,7 +177,7 @@ int main(int argc, char **argv)
 	huffman_tree = run_huffman(ch_freq, codes);
 
 	// 허프만 코드 출력 (stdout)
-	//print_huffman_code(codes);
+	print_huffman_code(codes);
 
 	////////////////////////////////////////
 	// 입력: 텍스트 파일
@@ -186,7 +186,7 @@ int main(int argc, char **argv)
 	outfp = fopen(argv[2], "wt");
 
 	// 허프만코드를 이용하여 인코딩(압축)
-	//int encoded_bytes = encoding( codes, infp, outfp);
+	int encoded_bytes = encoding(codes, infp, outfp);
 
 	// 허프만 코드 메모리 해제
 	free_huffman_code(codes);
@@ -229,7 +229,20 @@ void free_huffman_code(char *codes[])
 
 // 텍스트 파일을 허프만 코드를 이용하여 바이터리 파일로 인코딩
 // return value : 인코딩된 파일의 바이트 수
-int encoding(char *codes[], FILE *infp, FILE *outfp);
+int encoding(char *codes[], FILE *infp, FILE *outfp)
+{
+	int count = 0;
+	int read;
+	while (1)
+	{
+		read = fgetc(infp);
+		if (read == EOF)
+			break;
+		fprintf(outfp, "%s", codes[read]);
+		count += strlen(codes[read]);
+	}
+	return count;
+}
 
 // 바이너리 파일을 허프만 트리를 이용하여 텍스트 파일로 디코딩
 void decoding(tNode *root, FILE *infp, FILE *outfp);
@@ -238,7 +251,7 @@ void decoding(tNode *root, FILE *infp, FILE *outfp);
 // return value : 파일에서 읽은 바이트 수
 int read_chars(FILE *fp, int *ch_freq)
 {
-	char read;
+	int read;
 	while (1)
 	{
 		read = fgetc(fp);
@@ -458,8 +471,8 @@ void traverse_tree(tNode *root, char *code, int depth, char *codes[])
 		return;
 	}
 
-	char *lcode = _strdup(code, 1);
-	char *rcode = _strdup(code, 1);
+	char *lcode = strcat(_strdup(code, 1), "0");
+	char *rcode = strcat(_strdup(code, 1), "1");
 
 	//printf("lcode: \t\t%p, %d\n", strcat(lcode, "0"), depth);
 	//printf("rcode: \t\t%p, %d\n", strcat(rcode, "1"), depth);
