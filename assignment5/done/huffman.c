@@ -201,7 +201,7 @@ int main(int argc, char **argv)
 	outfp = fopen(argv[3], "wt");
 
 	// 허프만 트리를 이용하여 디코딩
-	//decoding( huffman_tree, infp, outfp);
+	decoding(huffman_tree, infp, outfp);
 
 	// 허프만 트리 메모리 해제
 	destroyTree(huffman_tree);
@@ -210,9 +210,9 @@ int main(int argc, char **argv)
 	fclose(outfp);
 
 	////////////////////////////////////////
-	//printf( "# of bytes of the original text = %d\n", num_bytes);
-	//printf( "# of bytes of the compressed text = %d\n", encoded_bytes);
-	//printf( "compression ratio = %.2f\n", ((float)num_bytes - encoded_bytes) / num_bytes * 100);
+	printf("# of bytes of the original text = %d\n", num_bytes);
+	printf("# of bytes of the compressed text = %d\n", encoded_bytes);
+	printf("compression ratio = %.2f\n", ((float)num_bytes - encoded_bytes) / num_bytes * 100);
 
 	return 0;
 }
@@ -241,16 +241,44 @@ int encoding(char *codes[], FILE *infp, FILE *outfp)
 		fprintf(outfp, "%s", codes[read]);
 		count += strlen(codes[read]);
 	}
-	return count;
+	return count / 8.0;
 }
 
 // 바이너리 파일을 허프만 트리를 이용하여 텍스트 파일로 디코딩
-void decoding(tNode *root, FILE *infp, FILE *outfp);
+void decoding(tNode *root, FILE *infp, FILE *outfp)
+{
+	int read;
+	tNode *node = root;
+
+	while (1)
+	{
+		read = fgetc(infp);
+		if (read == EOF)
+			break;
+
+		if (read - '0') // 1, go right
+		{
+			node = node->right;
+		}
+		else // 0, go left
+		{
+			node = node->left;
+		}
+
+		if (node->left == NULL && node->right == NULL)
+		{
+			fprintf(outfp, "%c", node->data);
+			node = root;
+		}
+	}
+	return;
+}
 
 // 파일에 속한 각 문자(바이트)의 빈도 저장
 // return value : 파일에서 읽은 바이트 수
 int read_chars(FILE *fp, int *ch_freq)
 {
+	int count = 0;
 	int read;
 	while (1)
 	{
@@ -258,7 +286,10 @@ int read_chars(FILE *fp, int *ch_freq)
 		if (read == EOF)
 			break;
 		ch_freq[read]++;
+		count++;
 	}
+
+	return count * sizeof(char);
 }
 
 // 새로운 노드를 생성
